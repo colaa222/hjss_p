@@ -35,6 +35,7 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 pip install openpyxl
+pip install python-dotenv
 ```
 
 설치 목적:
