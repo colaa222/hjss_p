@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kakao Internal Tool</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 720px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+    h1 {
+      margin-bottom: 24px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .field {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    input, textarea, button {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 14px;
+      padding: 10px;
+    }
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    button {
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 20px;
+      white-space: pre-wrap;
+      background: #f7f7f7;
+      border-radius: 8px;
+      padding: 14px;
+      min-height: 60px;
+    }
+  </style>
+</head>
+<body>
+  <h1>카카오톡 1건 발송 테스트</h1>
+
+  <div class="card">
+    <div class="field">
+      <label for="target">대상 이름</label>
+      <input id="target" type="text" placeholder="예: 임상민" />
+    </div>
+
+    <div class="field">
+      <label for="message">메시지</label>
+      <textarea id="message" placeholder="보낼 메시지를 입력하세요."></textarea>
+    </div>
+
+    <button id="sendBtn">전송 테스트</button>
+
+    <div id="result">여기에 결과가 표시됩니다.</div>
+  </div>
+
+  <script>
+    const sendBtn = document.getElementById("sendBtn");
+    const resultBox = document.getElementById("result");
+
+    sendBtn.addEventListener("click", async () => {
+      const target = document.getElementById("target").value.trim();
+      const message = document.getElementById("message").value.trim();
+
+      if (!target) {
+        resultBox.textContent = "대상 이름을 입력하세요.";
+        return;
+      }
+
+      if (!message) {
+        resultBox.textContent = "메시지를 입력하세요.";
+        return;
+      }
+
+      resultBox.textContent = "요청 전송 중...";
+
+      try {
+        const response = await fetch("/api/send", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ target, message })
+        });
+
+        const data = await response.json();
+        resultBox.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        resultBox.textContent = "요청 실패: " + error;
+      }
+    });
+  </script>
+</body>
+</html>
