@@ -31,6 +31,11 @@
       cursor: pointer;
     }
 
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
     details {
       margin-top: 12px;
       border: 1px solid #ddd;
@@ -66,19 +71,27 @@
   </style>
 </head>
 <body>
-  <h1>카카오톡 자동 발송</h1>
+  <h1>SMS 자동 발송</h1>
 
   <div class="box">
-    <h2>1건 발송</h2>
+    <h2>카카오톡 1건 발송</h2>
     <input id="target" type="text" placeholder="채팅방 이름" />
     <textarea id="message" rows="5" placeholder="보낼 메시지"></textarea>
-    <button onclick="sendOne()">1건 발송</button>
+    <button id="sendBtn" onclick="sendOne()">1건 발송</button>
   </div>
 
   <div class="box">
+  <h2>이메일 1건 발송</h2>
+  <input id="to_email" type="text" placeholder="받는 이메일" />
+  <input id="subject" type="text" placeholder="제목" />
+  <textarea id="email_body" rows="5" placeholder="내용"></textarea>
+  <button onclick="sendEmail()">이메일 발송</button>
+ </div>
+
+  <div class="box">
     <h2>엑셀 자동 발송</h2>
-    <button onclick="sendExcel()">엑셀 전체 발송</button>
-    <button onclick="resendFailed()">실패건 재발송</button>
+    <button id="sendExcelBtn" onclick="sendExcel()">엑셀 전체 발송</button>
+    <button id="resendFailedBtn" onclick="resendFailed()">실패건 재발송</button>
   </div>
 
   <div class="box">
@@ -91,18 +104,50 @@
     </details>
   </div>
 
+
+
   <script>
+    async function sendEmail() {
+        const to_email = document.getElementById("to_email").value;
+        const subject = document.getElementById("subject").value;
+        const body = document.getElementById("email_body").value;
+
+        const res = await fetch("/api/send-email", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            to_email,
+            subject,
+            body
+        })
+        });
+
+        const data = await res.json();
+        renderResult(data);
+    }
+
     function renderResult(data) {
-      const total = data.total ?? 0;
-      const success = data.success ?? 0;
-      const fail = data.fail ?? 0;
-      const savedFile = data.saved_file ?? "-";
+      const total = data.total ?? (data.ok !== undefined ? 1 : 0);
+      const success =
+        data.success ?? (data.ok === true ? 1 : 0);
+      const fail =
+        data.fail ?? (data.ok === false ? 1 : 0);
+      const savedFile = data.saved_file ?? data.file_path ?? "-";
+      const requestId = data.request_id ?? "-";
+      const message =
+        data.message ??
+        data.message_detail ??
+        "-";
 
       document.getElementById("summary-box").innerHTML = `
 총 발송: ${total}건<br>
 성공: ${success}건<br>
 실패: ${fail}건<br>
-결과 파일: ${savedFile}
+결과 파일: ${savedFile}<br>
+요청 ID: ${requestId}<br>
+메시지: ${message}
       `;
 
       document.getElementById("result").textContent =
@@ -110,48 +155,121 @@
     }
 
     async function sendOne() {
-      const target = document.getElementById("target").value;
-      const message = document.getElementById("message").value;
+      const sendBtn = document.getElementById("sendBtn");
 
-      const res = await fetch("/api/send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          target,
-          message
-        })
-      });
+      if (sendBtn.disabled) {
+        return;
+      }
 
-      const data = await res.json();
-      renderResult(data);
+      const target = document.getElementById("target").value.trim();
+      const message = document.getElementById("message").value.trim();
+
+      if (!target) {
+        alert("채팅방 이름을 입력하세요.");
+        return;
+      }
+
+      if (!message) {
+        alert("보낼 메시지를 입력하세요.");
+        return;
+      }
+
+      const originalText = sendBtn.innerText;
+      sendBtn.disabled = true;
+      sendBtn.innerText = "발송 중...";
+
+      try {
+        const res = await fetch("/api/send", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            target,
+            message
+          })
+        });
+
+        const data = await res.json();
+        renderResult(data);
+      } catch (error) {
+        renderResult({
+          ok: false,
+          message: "1건 발송 요청 중 오류가 발생했습니다.",
+          error: String(error)
+        });
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.innerText = originalText;
+      }
     }
 
     async function sendExcel() {
-      const res = await fetch("/api/send-excel", {
-        method: "POST"
-      });
+      const sendExcelBtn = document.getElementById("sendExcelBtn");
 
-      const data = await res.json();
-      renderResult(data);
+      if (sendExcelBtn.disabled) {
+        return;
+      }
 
-      alert(
-        `총 ${data.total}건\n성공 ${data.success}건\n실패 ${data.fail}건`
-      );
+      const originalText = sendExcelBtn.innerText;
+      sendExcelBtn.disabled = true;
+      sendExcelBtn.innerText = "발송 중...";
+
+      try {
+        const res = await fetch("/api/send-excel", {
+          method: "POST"
+        });
+
+        const data = await res.json();
+        renderResult(data);
+
+        alert(
+          `총 ${data.total}건\n성공 ${data.success}건\n실패 ${data.fail}건`
+        );
+      } catch (error) {
+        renderResult({
+          ok: false,
+          message: "엑셀 전체 발송 요청 중 오류가 발생했습니다.",
+          error: String(error)
+        });
+      } finally {
+        sendExcelBtn.disabled = false;
+        sendExcelBtn.innerText = originalText;
+      }
     }
 
     async function resendFailed() {
-      const res = await fetch("/api/resend-failed", {
-        method: "POST"
-      });
+      const resendFailedBtn = document.getElementById("resendFailedBtn");
 
-      const data = await res.json();
-      renderResult(data);
+      if (resendFailedBtn.disabled) {
+        return;
+      }
 
-      alert(
-        `실패건 재발송 완료\n총 ${data.total}건\n성공 ${data.success}건\n실패 ${data.fail}건`
-      );
+      const originalText = resendFailedBtn.innerText;
+      resendFailedBtn.disabled = true;
+      resendFailedBtn.innerText = "재발송 중...";
+
+      try {
+        const res = await fetch("/api/resend-failed", {
+          method: "POST"
+        });
+
+        const data = await res.json();
+        renderResult(data);
+
+        alert(
+          `실패건 재발송 완료\n총 ${data.total}건\n성공 ${data.success}건\n실패 ${data.fail}건`
+        );
+      } catch (error) {
+        renderResult({
+          ok: false,
+          message: "실패건 재발송 요청 중 오류가 발생했습니다.",
+          error: String(error)
+        });
+      } finally {
+        resendFailedBtn.disabled = false;
+        resendFailedBtn.innerText = originalText;
+      }
     }
   </script>
 </body>

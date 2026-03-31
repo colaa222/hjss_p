@@ -96,7 +96,9 @@ def find_first_child_by_title_contains(parent_hwnd: int, keyword: str) -> int:
     return found
 
 
-def find_children_by_class_under_parent(parent_hwnd: int, class_name: str, limit: int = 20) -> list[int]:
+def find_children_by_class_under_parent(
+    parent_hwnd: int, class_name: str, limit: int = 20
+) -> list[int]:
     found: list[int] = []
 
     def enum_child(hwnd: int, _lparam: Any) -> None:
@@ -165,6 +167,19 @@ def send_real_down() -> bool:
         win32api.keybd_event(win32con.VK_DOWN, 0, 0, 0)
         time.sleep(0.05)
         win32api.keybd_event(win32con.VK_DOWN, 0, win32con.KEYEVENTF_KEYUP, 0)
+        return True
+    except Exception:
+        return False
+
+
+def send_real_esc() -> bool:
+    """
+    실제 키보드 ESC 입력
+    """
+    try:
+        win32api.keybd_event(win32con.VK_ESCAPE, 0, 0, 0)
+        time.sleep(0.05)
+        win32api.keybd_event(win32con.VK_ESCAPE, 0, win32con.KEYEVENTF_KEYUP, 0)
         return True
     except Exception:
         return False
@@ -271,12 +286,15 @@ def inspect_search_controls(main_hwnd: int) -> dict:
     }
 
 
-def open_chatroom_by_search(main_hwnd: int, search_edit: int, target: str, wait_sec: float = 2.0) -> dict:
+def open_chatroom_by_search(
+    main_hwnd: int,
+    search_edit: int,
+    target: str,
+    wait_sec: float = 2.0,
+) -> dict:
     """
     채팅방 검색 후 엔터로 방 열기
-    1차: 실제 엔터
-    2차: ↓ + 엔터
-    exact / contains 둘 다 검사
+    1차만 시도하고, 과한 재시도는 하지 않음
     """
     input_ok = set_edit_text(search_edit, target)
     time.sleep(0.5)
@@ -301,27 +319,15 @@ def open_chatroom_by_search(main_hwnd: int, search_edit: int, target: str, wait_
     if not chat_hwnd:
         chat_hwnd = find_top_window_by_title_contains(target)
 
-    second_try = False
-    if not chat_hwnd:
-        send_real_down()
-        time.sleep(0.2)
-        send_real_enter()
-        second_try = True
-        time.sleep(wait_sec)
-
-        chat_hwnd = find_top_window_by_exact_title(target)
-        if not chat_hwnd:
-            chat_hwnd = find_top_window_by_title_contains(target)
-
     return {
         "ok": bool(chat_hwnd),
         "step": "open_chatroom",
-        "message": "검색 후 엔터로 채팅방 열기 테스트 완료",
+        "message": "검색 후 엔터로 채팅방 열기 완료",
         "input_ok": input_ok,
         "fg_ok": fg_ok,
         "focus_ok": focus_ok,
         "enter_ok": enter_ok,
-        "second_try": second_try,
+        "second_try": False,
         "chat_hwnd": chat_hwnd,
     }
 
@@ -332,8 +338,12 @@ def inspect_chatroom_input_controls(chat_hwnd: int) -> dict:
     """
     children = list_child_windows(chat_hwnd, limit=300)
     edit_candidates = find_children_by_class_under_parent(chat_hwnd, "Edit", limit=50)
-    richedit_candidates = find_children_by_class_under_parent(chat_hwnd, "RICHEDIT50W", limit=50)
-    richedit_candidates += find_children_by_class_under_parent(chat_hwnd, "RichEdit50W", limit=50)
+    richedit_candidates = find_children_by_class_under_parent(
+        chat_hwnd, "RICHEDIT50W", limit=50
+    )
+    richedit_candidates += find_children_by_class_under_parent(
+        chat_hwnd, "RichEdit50W", limit=50
+    )
 
     richedit_candidates = list(dict.fromkeys(richedit_candidates))
 
@@ -362,9 +372,40 @@ def choose_chat_input_hwnd(chat_input_info: dict) -> int:
     return 0
 
 
-def send_chat_text(chat_hwnd: int, input_hwnd: int, message: str) -> dict:
+def leave_chatroom_after_send(
+    chat_hwnd: int,
+    main_hwnd: int,
+    wait_sec: float = 0.6,
+) -> dict:
+    """
+    발송 후 현재 채팅방 상태를 정리해서
+    다음 발송이 메인 목록 기준으로 시작되게 만든다.
+    """
+    fg_chat_ok = set_foreground(chat_hwnd)
+    time.sleep(0.2)
+
+    esc_ok = send_real_esc()
+    time.sleep(wait_sec)
+
+    fg_main_ok = set_foreground(main_hwnd)
+    time.sleep(0.2)
+
+    return {
+        "fg_chat_ok": fg_chat_ok,
+        "esc_ok": esc_ok,
+        "fg_main_ok": fg_main_ok,
+    }
+
+
+def send_chat_text(
+    chat_hwnd: int,
+    input_hwnd: int,
+    message: str,
+    main_hwnd: int,
+) -> dict:
     """
     클립보드 + 실제 Ctrl+V + 실제 Enter 방식
+    발송 후 채팅방 상태 정리까지 수행
     """
     fg_ok = set_foreground(chat_hwnd)
     time.sleep(0.3)
@@ -401,11 +442,12 @@ def send_chat_text(chat_hwnd: int, input_hwnd: int, message: str) -> dict:
             "clip_ok": clip_ok,
         }
 
-    # 붙여넣기 후 카카오 UI 반응 대기
     time.sleep(0.5)
 
     enter_ok = send_real_enter()
-    time.sleep(0.5)
+    time.sleep(0.7)
+
+    leave_result = leave_chatroom_after_send(chat_hwnd, main_hwnd)
 
     return {
         "ok": enter_ok,
@@ -418,6 +460,7 @@ def send_chat_text(chat_hwnd: int, input_hwnd: int, message: str) -> dict:
         "clip_ok": clip_ok,
         "paste_ok": paste_ok,
         "enter_ok": enter_ok,
+        "leave_result": leave_result,
     }
 
 
@@ -429,6 +472,7 @@ def send_one_kakao(target: str, message: str) -> dict:
     3) 검색 후 엔터로 방 열기
     4) 열린 채팅방 입력창 찾기
     5) 클립보드 붙여넣기 후 엔터 전송
+    6) 발송 후 채팅방 상태 정리
     """
     main_hwnd = wait_for_kakao_main_window(timeout=5.0)
     if not main_hwnd:
@@ -503,7 +547,7 @@ def send_one_kakao(target: str, message: str) -> dict:
             "chat_richedit_candidates": chat_input_info["richedit_candidates"],
         }
 
-    send_result = send_chat_text(chat_hwnd, input_hwnd, message)
+    send_result = send_chat_text(chat_hwnd, input_hwnd, message, main_hwnd)
 
     return {
         "ok": send_result["ok"],
@@ -529,4 +573,5 @@ def send_one_kakao(target: str, message: str) -> dict:
         "clip_ok": send_result.get("clip_ok"),
         "paste_ok": send_result.get("paste_ok"),
         "send_enter_ok": send_result.get("enter_ok"),
+        "leave_result": send_result.get("leave_result"),
     }
