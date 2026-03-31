@@ -83,23 +83,67 @@ def api_send(payload: SendRequest):
             },
         )
 
-    if is_duplicate_send(target, message):
+    try:
+        if is_duplicate_send("kakao", target, message):
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "request_id": request_id,
+                    "ok": False,
+                    "step": "dedup_skip",
+                    "message": "최근 5초 내 동일 요청으로 발송을 건너뜁니다.",
+                    "target": target,
+                },
+            )
+
+        result = send_one_kakao(target, message)
+        result["request_id"] = request_id
+
+        status_code = 200 if result.get("ok") else 500
+        return JSONResponse(status_code=status_code, content=result)
+
+    except Exception as e:
+        print(f"[SEND ERROR] request_id={request_id} error={e}")
         return JSONResponse(
-            status_code=409,
+            status_code=500,
             content={
                 "request_id": request_id,
                 "ok": False,
-                "step": "dedup_skip",
-                "message": "최근 5초 내 동일 요청으로 발송을 건너뜁니다.",
-                "target": target,
+                "step": "api_send_exception",
+                "message": str(e),
             },
         )
 
-    result = send_one_kakao(target, message)
-    result["request_id"] = request_id
+    try:
+        if is_duplicate_send(target, message):
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "request_id": request_id,
+                    "ok": False,
+                    "step": "dedup_skip",
+                    "message": "최근 5초 내 동일 요청으로 발송을 건너뜁니다.",
+                    "target": target,
+                },
+            )
 
-    status_code = 200 if result.get("ok") else 500
-    return JSONResponse(status_code=status_code, content=result)
+        result = send_one_kakao(target, message)
+        result["request_id"] = request_id
+
+        status_code = 200 if result.get("ok") else 500
+        return JSONResponse(status_code=status_code, content=result)
+
+    except Exception as e:
+        print(f"[SEND ERROR] request_id={request_id} error={e}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "request_id": request_id,
+                "ok": False,
+                "step": "api_send_exception",
+                "message": str(e),
+            },
+        )
 
 
 @app.post("/api/send-excel")
