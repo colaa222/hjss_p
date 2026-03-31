@@ -64,3 +64,31 @@ def api_send_excel():
         "fail": fail_count,
         "results": results,
     }
+
+
+@app.post("/api/resend-failed")
+def api_resend_failed():
+    file_path = "sample.xlsx"
+
+    rows = read_targets_from_excel(file_path)
+
+    failed_rows = [
+        row for row in rows
+        if row.get("send_status") == 0
+    ]
+
+    results = send_many(failed_rows)
+    write_results_to_excel(file_path, results)
+
+    success_count = sum(1 for r in results if r.get("ok"))
+    fail_count = len(results) - success_count
+
+    return {
+        "ok": True,
+        "mode": "failed_only",
+        "file_path": file_path,
+        "total": len(results),
+        "success": success_count,
+        "fail": fail_count,
+        "results": results,
+    }

@@ -31,6 +31,19 @@
       cursor: pointer;
     }
 
+    details {
+      margin-top: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      background: #fafafa;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: bold;
+    }
+
     pre {
       background: #f7f7f7;
       padding: 16px;
@@ -38,6 +51,17 @@
       overflow-x: auto;
       white-space: pre-wrap;
       word-break: break-word;
+      margin-top: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    #summary-box {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #f7f7f7;
+      line-height: 1.8;
     }
   </style>
 </head>
@@ -52,16 +76,39 @@
   </div>
 
   <div class="box">
-    <h2>엑셀 전체 발송</h2>
+    <h2>엑셀 자동 발송</h2>
     <button onclick="sendExcel()">엑셀 전체 발송</button>
+    <button onclick="resendFailed()">실패건 재발송</button>
   </div>
 
   <div class="box">
-    <h2>결과</h2>
-    <pre id="result"></pre>
+    <h2>요약 결과</h2>
+    <div id="summary-box">아직 실행되지 않았습니다.</div>
+
+    <details>
+      <summary>상세 로그 펼쳐보기</summary>
+      <pre id="result"></pre>
+    </details>
   </div>
 
   <script>
+    function renderResult(data) {
+      const total = data.total ?? 0;
+      const success = data.success ?? 0;
+      const fail = data.fail ?? 0;
+      const savedFile = data.saved_file ?? "-";
+
+      document.getElementById("summary-box").innerHTML = `
+총 발송: ${total}건<br>
+성공: ${success}건<br>
+실패: ${fail}건<br>
+결과 파일: ${savedFile}
+      `;
+
+      document.getElementById("result").textContent =
+        JSON.stringify(data, null, 2);
+    }
+
     async function sendOne() {
       const target = document.getElementById("target").value;
       const message = document.getElementById("message").value;
@@ -78,8 +125,7 @@
       });
 
       const data = await res.json();
-      document.getElementById("result").textContent =
-        JSON.stringify(data, null, 2);
+      renderResult(data);
     }
 
     async function sendExcel() {
@@ -88,12 +134,23 @@
       });
 
       const data = await res.json();
-
-      document.getElementById("result").textContent =
-        JSON.stringify(data, null, 2);
+      renderResult(data);
 
       alert(
         `총 ${data.total}건\n성공 ${data.success}건\n실패 ${data.fail}건`
+      );
+    }
+
+    async function resendFailed() {
+      const res = await fetch("/api/resend-failed", {
+        method: "POST"
+      });
+
+      const data = await res.json();
+      renderResult(data);
+
+      alert(
+        `실패건 재발송 완료\n총 ${data.total}건\n성공 ${data.success}건\n실패 ${data.fail}건`
       );
     }
   </script>
