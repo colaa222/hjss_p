@@ -3,107 +3,575 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kakao Internal Tool</title>
+  <title>통합 자동 발송 툴</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 720px;
-      margin: 40px auto;
-      padding: 0 16px;
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: "Pretendard", Arial, sans-serif;
+    background: #f6f7fb;
+    color: #191f28;
+  }
+
+  .container {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 40px 20px 60px;
+  }
+
+  h1 {
+    margin: 0 0 10px;
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .page-desc {
+    margin: 0 0 28px;
+    font-size: 15px;
+    color: #6b7684;
+    line-height: 1.6;
+  }
+
+  .grid {
+    display: grid;
+    gap: 20px;
+  }
+
+  .card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+  }
+
+  .card h2 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .card-desc {
+    margin: 0 0 20px;
+    color: #8b95a1;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .form-group {
+    margin-bottom: 14px;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #4e5968;
+  }
+
+  input,
+  textarea {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: #f2f4f6;
+    border-radius: 16px;
+    padding: 16px 18px;
+    font-size: 15px;
+    color: #191f28;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #b0b8c1;
+  }
+
+  textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  button {
+    width: 100%;
+    border: none;
+    border-radius: 16px;
+    padding: 15px 18px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+
+  button:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background: #3182f6;
+    color: white;
+  }
+
+  .btn-dark {
+    background: #191f28;
+    color: white;
+  }
+
+  .btn-warning {
+    background: #ff8a00;
+    color: white;
+  }
+
+  .button-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .summary-box {
+    margin-top: 14px;
+    padding: 18px;
+    border-radius: 18px;
+    background: #f9fafb;
+    line-height: 1.9;
+    font-size: 15px;
+    color: #333d4b;
+  }
+
+  .summary-box.success {
+    background: #eef7ff;
+  }
+
+  .summary-box.fail {
+    background: #fff2f2;
+  }
+
+  .summary-box.pending {
+    background: #f2f4f6;
+  }
+
+  .result-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .meta-item {
+    background: #f2f4f6;
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .meta-label {
+    display: block;
+    font-size: 12px;
+    color: #8b95a1;
+    margin-bottom: 6px;
+  }
+
+  .meta-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #191f28;
+    word-break: break-word;
+  }
+
+  details {
+    margin-top: 16px;
+    background: #f9fafb;
+    border-radius: 18px;
+    padding: 14px 16px;
+  }
+
+  summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: #333d4b;
+  }
+
+  pre {
+    margin-top: 12px;
+    background: #191f28;
+    color: #f9fafb;
+    border-radius: 16px;
+    padding: 16px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 420px;
+    overflow-y: auto;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .notice {
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    background: #f2f8ff;
+    color: #3182f6;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 720px) {
+    .button-row,
+    .result-meta {
+      grid-template-columns: 1fr;
     }
+
+    .container {
+      padding: 28px 16px 40px;
+    }
+
     h1 {
-      margin-bottom: 24px;
+      font-size: 28px;
     }
+
     .card {
-      border: 1px solid #ddd;
-      border-radius: 10px;
       padding: 20px;
+      border-radius: 20px;
     }
-    .field {
-      margin-bottom: 16px;
-    }
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-    }
-    input, textarea, button {
-      width: 100%;
-      box-sizing: border-box;
-      font-size: 14px;
-      padding: 10px;
-    }
-    textarea {
-      min-height: 120px;
-      resize: vertical;
-    }
-    button {
-      cursor: pointer;
-    }
-    #result {
-      margin-top: 20px;
-      white-space: pre-wrap;
-      background: #f7f7f7;
-      border-radius: 8px;
-      padding: 14px;
-      min-height: 60px;
-    }
-  </style>
+  }
+</style>
 </head>
 <body>
-  <h1>카카오톡 1건 발송 테스트</h1>
+  <div class="container">
+    <h1>통합 자동 발송 툴</h1>
+    <p class="page-desc">
+      카카오톡 단건 발송, 이메일 단건 발송, 엑셀 기반 일괄 발송을 한 화면에서 실행합니다.
+    </p>
 
-  <div class="card">
-    <div class="field">
-      <label for="target">대상 이름</label>
-      <input id="target" type="text" placeholder="예: 임상민" />
+    <div class="grid">
+      <div class="card">
+        <h2>카카오톡 1건 발송</h2>
+        <p class="card-desc">
+          채팅방 이름과 메시지를 입력해 카카오톡으로 1건 발송합니다.
+        </p>
+
+        <div class="form-group">
+          <label for="target">채팅방 이름</label>
+          <input id="target" type="text" placeholder="예: 임상민" />
+        </div>
+
+        <div class="form-group">
+          <label for="message">보낼 메시지</label>
+          <textarea id="message" placeholder="카카오톡으로 보낼 메시지를 입력하세요."></textarea>
+        </div>
+
+        <button id="sendBtn" class="btn-primary" onclick="sendOne()">
+          카카오톡 1건 발송
+        </button>
+      </div>
+
+      <div class="card">
+        <h2>이메일 1건 발송</h2>
+        <p class="card-desc">
+          이메일 주소, 제목, 내용을 입력해 메일을 발송합니다.
+        </p>
+
+        <div class="form-group">
+          <label for="to_email">받는 이메일</label>
+          <input id="to_email" type="text" placeholder="예: example@naver.com" />
+        </div>
+
+        <div class="form-group">
+          <label for="subject">이메일 제목</label>
+          <input id="subject" type="text" placeholder="예: 테스트 메일" />
+        </div>
+
+        <div class="form-group">
+          <label for="email_body">이메일 내용</label>
+          <textarea id="email_body" placeholder="이메일 본문을 입력하세요."></textarea>
+        </div>
+
+        <button id="sendEmailBtn" class="btn-secondary" onclick="sendEmail()">
+          이메일 1건 발송
+        </button>
+      </div>
+
+      <div class="card">
+        <h2>엑셀 일괄 발송</h2>
+        <p class="card-desc">
+          sample.xlsx 파일을 읽어 channel 값에 따라 카카오톡 또는 이메일로 일괄 발송합니다.
+        </p>
+
+        <div class="notice">
+          엑셀 컬럼 순서: channel / target / to_email / subject / message / status / detail
+        </div>
+
+        <div class="button-row">
+          <button id="sendExcelBtn" class="btn-primary" onclick="sendExcel()">
+            엑셀 전체 발송
+          </button>
+          <button id="resendFailedBtn" class="btn-warning" onclick="resendFailed()">
+            실패건 재발송
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>실행 결과</h2>
+        <p class="card-desc">
+          마지막 실행 결과 요약과 상세 로그를 확인할 수 있습니다.
+        </p>
+
+        <div id="summary-box" class="summary-box pending">
+          아직 실행되지 않았습니다.
+        </div>
+
+        <div class="result-meta">
+          <div class="meta-item">
+            <span class="meta-label">마지막 작업</span>
+            <span id="last-action" class="meta-value">-</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">요청 ID</span>
+            <span id="request-id" class="meta-value">-</span>
+          </div>
+        </div>
+
+        <details>
+          <summary>상세 로그 펼쳐보기</summary>
+          <pre id="result"></pre>
+        </details>
+      </div>
     </div>
-
-    <div class="field">
-      <label for="message">메시지</label>
-      <textarea id="message" placeholder="보낼 메시지를 입력하세요."></textarea>
-    </div>
-
-    <button id="sendBtn">전송 테스트</button>
-
-    <div id="result">여기에 결과가 표시됩니다.</div>
   </div>
 
   <script>
+    function setSummaryState(type) {
+      const box = document.getElementById("summary-box");
+      box.classList.remove("success", "fail", "pending");
+      box.classList.add(type);
+    }
+
+    function renderResult(data, actionName = "-") {
+      const total = data.total ?? (data.ok !== undefined ? 1 : 0);
+      const success = data.success ?? (data.ok === true ? 1 : 0);
+      const fail = data.fail ?? (data.ok === false ? 1 : 0);
+      const savedFile = data.saved_file ?? data.file_path ?? "-";
+      const requestId = data.request_id ?? "-";
+      const message = data.message ?? data.message_detail ?? "-";
+
+      if (fail > 0 || data.ok === false) {
+        setSummaryState("fail");
+      } else if (success > 0 || data.ok === true) {
+        setSummaryState("success");
+      } else {
+        setSummaryState("pending");
+      }
+
+      document.getElementById("summary-box").innerHTML = `
+총 발송: ${total}건<br>
+성공: ${success}건<br>
+실패: ${fail}건<br>
+결과 파일: ${savedFile}<br>
+메시지: ${message}
+      `;
+
+      document.getElementById("request-id").textContent = requestId;
+      document.getElementById("last-action").textContent = actionName;
+      document.getElementById("result").textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function sendOne() {
     const sendBtn = document.getElementById("sendBtn");
-    const resultBox = document.getElementById("result");
 
-    sendBtn.addEventListener("click", async () => {
-      const target = document.getElementById("target").value.trim();
-      const message = document.getElementById("message").value.trim();
+    if (sendBtn.disabled) return;
 
-      if (!target) {
-        resultBox.textContent = "대상 이름을 입력하세요.";
+    const target = document.getElementById("target").value.trim();
+    const message = document.getElementById("message").value.trim();
+
+    if (!target) {
+      alert("채팅방 이름을 입력하세요.");
+      return;
+    }
+
+    if (!message) {
+      alert("보낼 메시지를 입력하세요.");
+      return;
+    }
+
+    const originalText = sendBtn.innerText;
+    sendBtn.disabled = true;
+    sendBtn.innerText = "카카오톡 발송 중...";
+
+    try {
+      const res = await fetch("/api/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ target, message })
+      });
+
+      const text = await res.text();
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = {
+          ok: false,
+          message: "서버가 JSON이 아닌 응답을 반환했습니다.",
+          raw_response: text
+        };
+      }
+
+      renderResult(data, "카카오톡 1건 발송");
+    } catch (error) {
+      renderResult(
+        {
+          ok: false,
+          message: "카카오톡 발송 요청 중 오류가 발생했습니다.",
+          error: String(error)
+        },
+        "카카오톡 1건 발송"
+      );
+    } finally {
+      sendBtn.disabled = false;
+      sendBtn.innerText = originalText;
+    }
+  }
+
+    async function sendEmail() {
+      const sendEmailBtn = document.getElementById("sendEmailBtn");
+
+      if (sendEmailBtn.disabled) return;
+
+      const to_email = document.getElementById("to_email").value.trim();
+      const subject = document.getElementById("subject").value.trim();
+      const body = document.getElementById("email_body").value.trim();
+
+      if (!to_email) {
+        alert("받는 이메일을 입력하세요.");
         return;
       }
 
-      if (!message) {
-        resultBox.textContent = "메시지를 입력하세요.";
+      if (!subject) {
+        alert("이메일 제목을 입력하세요.");
         return;
       }
 
-      resultBox.textContent = "요청 전송 중...";
+      if (!body) {
+        alert("이메일 내용을 입력하세요.");
+        return;
+      }
+
+      const originalText = sendEmailBtn.innerText;
+      sendEmailBtn.disabled = true;
+      sendEmailBtn.innerText = "이메일 발송 중...";
 
       try {
-        const response = await fetch("/api/send", {
+        const res = await fetch("/api/send-email", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({ target, message })
+          body: JSON.stringify({
+            to_email,
+            subject,
+            body
+          })
         });
 
-        const data = await response.json();
-        resultBox.textContent = JSON.stringify(data, null, 2);
+        const data = await res.json();
+        renderResult(data, "이메일 1건 발송");
       } catch (error) {
-        resultBox.textContent = "요청 실패: " + error;
+        renderResult(
+          {
+            ok: false,
+            message: "이메일 발송 요청 중 오류가 발생했습니다.",
+            error: String(error)
+          },
+          "이메일 1건 발송"
+        );
+      } finally {
+        sendEmailBtn.disabled = false;
+        sendEmailBtn.innerText = originalText;
       }
-    });
+    }
+
+    async function sendExcel() {
+      const sendExcelBtn = document.getElementById("sendExcelBtn");
+
+      if (sendExcelBtn.disabled) return;
+
+      const originalText = sendExcelBtn.innerText;
+      sendExcelBtn.disabled = true;
+      sendExcelBtn.innerText = "엑셀 발송 중...";
+
+      try {
+        const res = await fetch("/api/send-excel", {
+          method: "POST"
+        });
+
+        const data = await res.json();
+        renderResult(data, "엑셀 전체 발송");
+
+        alert(
+          `총 ${data.total}건\n성공 ${data.success}건\n실패 ${data.fail}건`
+        );
+      } catch (error) {
+        renderResult(
+          {
+            ok: false,
+            message: "엑셀 전체 발송 요청 중 오류가 발생했습니다.",
+            error: String(error)
+          },
+          "엑셀 전체 발송"
+        );
+      } finally {
+        sendExcelBtn.disabled = false;
+        sendExcelBtn.innerText = originalText;
+      }
+    }
+
+    async function resendFailed() {
+      const resendFailedBtn = document.getElementById("resendFailedBtn");
+
+      if (resendFailedBtn.disabled) return;
+
+      const originalText = resendFailedBtn.innerText;
+      resendFailedBtn.disabled = true;
+      resendFailedBtn.innerText = "실패건 재발송 중...";
+
+      try {
+        const res = await fetch("/api/resend-failed", {
+          method: "POST"
+        });
+
+        const data = await res.json();
+        renderResult(data, "실패건 재발송");
+
+        alert(
+          `실패건 재발송 완료\n총 ${data.total}건\n성공 ${data.success}건\n실패 ${data.fail}건`
+        );
+      } catch (error) {
+        renderResult(
+          {
+            ok: false,
+            message: "실패건 재발송 요청 중 오류가 발생했습니다.",
+            error: String(error)
+          },
+          "실패건 재발송"
+        );
+      } finally {
+        resendFailedBtn.disabled = false;
+        resendFailedBtn.innerText = originalText;
+      }
+    }
   </script>
 </body>
 </html>
