@@ -3,107 +3,99 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kakao Internal Tool</title>
+  <title>카카오톡 자동 발송</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       max-width: 720px;
       margin: 40px auto;
-      padding: 0 16px;
-    }
-    h1 {
-      margin-bottom: 24px;
-    }
-    .card {
-      border: 1px solid #ddd;
-      border-radius: 10px;
       padding: 20px;
     }
-    .field {
-      margin-bottom: 16px;
+
+    .box {
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
     }
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-    }
+
     input, textarea, button {
       width: 100%;
+      padding: 12px;
+      margin-top: 10px;
       box-sizing: border-box;
       font-size: 14px;
-      padding: 10px;
     }
-    textarea {
-      min-height: 120px;
-      resize: vertical;
-    }
+
     button {
       cursor: pointer;
     }
-    #result {
-      margin-top: 20px;
-      white-space: pre-wrap;
+
+    pre {
       background: #f7f7f7;
+      padding: 16px;
       border-radius: 8px;
-      padding: 14px;
-      min-height: 60px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
   </style>
 </head>
 <body>
-  <h1>카카오톡 1건 발송 테스트</h1>
+  <h1>카카오톡 자동 발송</h1>
 
-  <div class="card">
-    <div class="field">
-      <label for="target">대상 이름</label>
-      <input id="target" type="text" placeholder="예: 임상민" />
-    </div>
+  <div class="box">
+    <h2>1건 발송</h2>
+    <input id="target" type="text" placeholder="채팅방 이름" />
+    <textarea id="message" rows="5" placeholder="보낼 메시지"></textarea>
+    <button onclick="sendOne()">1건 발송</button>
+  </div>
 
-    <div class="field">
-      <label for="message">메시지</label>
-      <textarea id="message" placeholder="보낼 메시지를 입력하세요."></textarea>
-    </div>
+  <div class="box">
+    <h2>엑셀 전체 발송</h2>
+    <button onclick="sendExcel()">엑셀 전체 발송</button>
+  </div>
 
-    <button id="sendBtn">전송 테스트</button>
-
-    <div id="result">여기에 결과가 표시됩니다.</div>
+  <div class="box">
+    <h2>결과</h2>
+    <pre id="result"></pre>
   </div>
 
   <script>
-    const sendBtn = document.getElementById("sendBtn");
-    const resultBox = document.getElementById("result");
+    async function sendOne() {
+      const target = document.getElementById("target").value;
+      const message = document.getElementById("message").value;
 
-    sendBtn.addEventListener("click", async () => {
-      const target = document.getElementById("target").value.trim();
-      const message = document.getElementById("message").value.trim();
+      const res = await fetch("/api/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          target,
+          message
+        })
+      });
 
-      if (!target) {
-        resultBox.textContent = "대상 이름을 입력하세요.";
-        return;
-      }
+      const data = await res.json();
+      document.getElementById("result").textContent =
+        JSON.stringify(data, null, 2);
+    }
 
-      if (!message) {
-        resultBox.textContent = "메시지를 입력하세요.";
-        return;
-      }
+    async function sendExcel() {
+      const res = await fetch("/api/send-excel", {
+        method: "POST"
+      });
 
-      resultBox.textContent = "요청 전송 중...";
+      const data = await res.json();
 
-      try {
-        const response = await fetch("/api/send", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ target, message })
-        });
+      document.getElementById("result").textContent =
+        JSON.stringify(data, null, 2);
 
-        const data = await response.json();
-        resultBox.textContent = JSON.stringify(data, null, 2);
-      } catch (error) {
-        resultBox.textContent = "요청 실패: " + error;
-      }
-    });
+      alert(
+        `총 ${data.total}건\n성공 ${data.success}건\n실패 ${data.fail}건`
+      );
+    }
   </script>
 </body>
 </html>
