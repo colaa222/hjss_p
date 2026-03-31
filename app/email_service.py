@@ -1,18 +1,25 @@
+import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from dotenv import load_dotenv
 
+load_dotenv()
 
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
-
-EMAIL_ADDRESS = "colaa222@gmail.com" # Google Email
-EMAIL_PASSWORD = "svcl xlot tpze rdsy" # 웹 비밀번호 2차 인증 
+EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS", "")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
+SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 
 
 def send_one_email(to_email: str, subject: str, body: str) -> dict:
     try:
-        print("[EMAIL] start")
+        if not EMAIL_ADDRESS or not EMAIL_PASSWORD:
+            return {
+                "ok": False,
+                "step": "env_validate",
+                "message": "EMAIL_ADDRESS 또는 EMAIL_PASSWORD 환경변수가 비어 있습니다.",
+            }
 
         msg = MIMEMultipart()
         msg["From"] = EMAIL_ADDRESS
@@ -20,23 +27,10 @@ def send_one_email(to_email: str, subject: str, body: str) -> dict:
         msg["Subject"] = subject
         msg.attach(MIMEText(body, "plain", "utf-8"))
 
-        print("[EMAIL] smtp connect")
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-
-        print("[EMAIL] starttls")
         server.starttls()
-
-        print("[EMAIL] login")
         server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-
-        print("[EMAIL] sendmail")
-        server.sendmail(
-            EMAIL_ADDRESS,
-            to_email,
-            msg.as_string(),
-        )
-
-        print("[EMAIL] quit")
+        server.sendmail(EMAIL_ADDRESS, to_email, msg.as_string())
         server.quit()
 
         return {
@@ -48,7 +42,6 @@ def send_one_email(to_email: str, subject: str, body: str) -> dict:
         }
 
     except Exception as e:
-        print("[EMAIL ERROR]", str(e))
         return {
             "ok": False,
             "step": "send_email",
