@@ -37,10 +37,13 @@ git clone https://github.com/colaa222/hjss_p.git
 cd hjss_p
 git fetch origin
 git checkout feature/backend_advance
-python -m venv .venv
 ```
 
-가상환경 활성화 후 패키지를 설치합니다.
+`venv`를 사용하는 경우에는 아래처럼 가상환경을 만들고 활성화한 뒤 패키지를 설치합니다.
+
+```bash
+python -m venv .venv
+```
 
 ```cmd
 .venv\Scripts\activate
@@ -53,6 +56,16 @@ PowerShell을 사용하는 경우에는 아래 명령으로 활성화할 수 있
 
 ```powershell
 .venv\Scripts\Activate.ps1
+```
+
+`conda`를 사용하는 경우에는 PowerShell에서 아래 순서로 진행합니다.
+
+```powershell
+conda create -n hjss_p python=3.11 -y
+conda activate hjss_p
+pip install -r requirements.txt
+pip install openpyxl
+pip install python-dotenv
 ```
 
 ## 3. 실행 방법
