@@ -30,14 +30,29 @@
 
 ## 2. 설치 방법
 
-처음 한 번만 설치하면 됩니다.
+처음 설치할 때 아래 순서대로 진행합니다.
 
-```powershell
+```bash
+git clone https://github.com/colaa222/hjss_p.git
+cd hjss_p
+git fetch origin
+git checkout feature/backend_advance
 python -m venv .venv
-.venv\Scripts\Activate.ps1
+```
+
+가상환경 활성화 후 패키지를 설치합니다.
+
+```cmd
+.venv\Scripts\activate
 pip install -r requirements.txt
 pip install openpyxl
 pip install python-dotenv
+```
+
+PowerShell을 사용하는 경우에는 아래 명령으로 활성화할 수 있습니다.
+
+```powershell
+.venv\Scripts\Activate.ps1
 ```
 
 ## 3. 실행 방법
